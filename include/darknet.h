@@ -107,8 +107,19 @@ typedef enum {
 
 // parser.h
 typedef enum {
-    IOU, GIOU, MSE
+    IOU, GIOU, MSE, DIOU, CIOU
 } IOU_LOSS;
+
+// parser.h
+typedef enum {
+    DEFAULT_NMS, GREEDY_NMS, DIOU_NMS, CORNERS_NMS
+} NMS_KIND;
+
+// parser.h
+typedef enum {
+    YOLO_CENTER = 1 << 0, YOLO_LEFT_TOP = 1 << 1, YOLO_RIGHT_BOTTOM = 1 << 2
+} YOLO_POINT;
+
 
 // image.h
 typedef enum{
@@ -334,6 +345,9 @@ struct layer {
     float iou_normalizer;
     float cls_normalizer;
     IOU_LOSS iou_loss;
+    NMS_KIND nms_kind;
+    float beta_nms;
+    YOLO_POINT yolo_point;
 
     char *align_bit_weights_gpu;
     float *mean_arr_gpu;
@@ -719,7 +733,7 @@ typedef struct dxrep {
 
 // box.h
 typedef struct ious {
-    float iou, giou;
+    float iou, giou, diou, ciou;
     dxrep dx_iou;
     dxrep dx_giou;
 } ious;
@@ -734,6 +748,7 @@ typedef struct detection{
     float objectness;
     int sort_class;
     float *uc; // Gaussian_YOLOv3 - tx,ty,tw,th uncertainty
+    int points; // bit-0 - center, bit-1 - top-left-corner, bit-2 - bottom-right-corner
 } detection;
 
 // matrix.h
@@ -835,6 +850,7 @@ LIB_API load_args get_base_args(network *net);
 // box.h
 LIB_API void do_nms_sort(detection *dets, int total, int classes, float thresh);
 LIB_API void do_nms_obj(detection *dets, int total, int classes, float thresh);
+LIB_API void diounms_sort(detection *dets, int total, int classes, float thresh, NMS_KIND nms_kind, float beta1);
 
 // network.h
 LIB_API float *network_predict(network net, float *input);
